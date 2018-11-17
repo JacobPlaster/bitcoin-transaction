@@ -221,6 +221,7 @@ function sendTransaction (options) {
 		if (!options.subtractFee) {
 			if (fee > amtSatoshi) throw "BitCoin amount must be larger than the fee. (Ideally it should be MUCH larger)";
 			change = availableSat - amtSatoshi - fee
+			fee = getTransactionSize(ninputs, change > 0 ? 2 : 1) * feePerByte;
 			tx.addOutput(to, amtSatoshi - fee);
 		} else {
 			tx.addOutput(to, amtSatoshi);
