@@ -218,16 +218,13 @@ function sendTransaction (options) {
 		if (availableSat < amtSatoshi) throw "You do not have enough in your wallet to send that much.";
 		var change = availableSat - amtSatoshi;
 		var fee = getTransactionSize(ninputs, change > 0 ? 2 : 1) * feePerByte;
-		if (!options.subtractFee) {
-			if (fee > amtSatoshi) throw "BitCoin amount must be larger than the fee. (Ideally it should be MUCH larger)";
-			change = availableSat - amtSatoshi - fee
-			fee = getTransactionSize(ninputs, change > 0 ? 2 : 1) * feePerByte;
-			tx.addOutput(to, amtSatoshi - fee);
-		} else {
-			tx.addOutput(to, amtSatoshi);
-		}
 		if (options.omniOutput) {
 			tx.addOutput(omniOutput, 0)
+			tx.addOutput(to, amtSatoshi);
+			change = availableSat - amtSatoshi - fee
+		} else {
+			if (fee > amtSatoshi) throw "BitCoin amount must be larger than the fee. (Ideally it should be MUCH larger)";
+			tx.addOutput(to, amtSatoshi - fee);
 		}
 		if (change > 0) tx.addOutput(from, change);
 		var keyPair = bitcoin.ECPair.fromWIF(options.privKeyWIF, bitcoinNetwork);
