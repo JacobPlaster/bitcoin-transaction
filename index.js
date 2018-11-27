@@ -154,13 +154,13 @@ function getFees (provider, feeName) {
 
 function sendTetherTransaction(options) {
 	options.btc = 0.00000546 // 546 satoshi
-	const omniOutput = [
+	const payload = [
 		"6f6d6e69", // omni
 		"0000",     // version
 		"0000000000" + (31).toString(16), // Tether ID
 		"00000000" + (options.usdt).toString(16) // amount = 10 * 100 000 000 in HEX
 	].join('')
-	const data = Buffer.from(omniOutput, "hex")
+	const data = Buffer.from(payload, "hex")
 	const omniOutput = bitcoin.script.compile([
 		bitcoin.opcodes.OP_RETURN,
 		data
@@ -219,7 +219,7 @@ function sendTransaction (options) {
 		var change = availableSat - amtSatoshi;
 		var fee = getTransactionSize(ninputs, change > 0 ? 2 : 1) * feePerByte;
 		if (options.omniOutput) {
-			tx.addOutput(omniOutput, 0)
+			tx.addOutput(options.omniOutput, 0)
 			tx.addOutput(to, amtSatoshi);
 			change = availableSat - amtSatoshi - fee
 		} else {
