@@ -154,6 +154,8 @@ function getFees (provider, feeName) {
 
 function sendTetherTransaction(options) {
 	options.btc = 0.00000546 // 546 satoshi
+	const fundValue = 546 // dust
+  const feeValue = 5000
 	const payload = [
 		"6f6d6e69", // omni
 		"0000",     // version
@@ -167,6 +169,7 @@ function sendTetherTransaction(options) {
 	])
 	options.omniOutput = omniOutput;
 	options.subtractFee = false;
+	
 	return sendTransaction(options)
 }
 
@@ -215,18 +218,27 @@ function sendTransaction (options) {
 			}
 		}
 
-		if (availableSat < amtSatoshi) throw "You do not have enough in your wallet to send that much.";
-		var change = availableSat - amtSatoshi;
-		var fee = getTransactionSize(ninputs, change > 0 ? 2 : 1) * feePerByte;
+		if (availableSat < amtSatoshi) return Promise.reject("You do not have enough funds to send that much")
+		const change = availableSat - amtSatoshi;
 		if (options.omniOutput) {
-			tx.addOutput(options.omniOutput, 0)
+			// const fee = getTransactionSize(ninputs, change > 0 ? 2 : 1) * feePerByte;
+			const fee = 5000
+			const fundValue     = 546 // dust
+			const skipValue     = availableSat - fundValue - fee
+			console.log("Available fee: " + availableSat)
+			console.log("FundValue: " + fundValue)
+			console.log("Fee: " + fee)
+			console.log("SkipValue: " + skipValue)
+			if (skipValue < 0) return Promise.reject("You do not have enough funds to send that much")
 			tx.addOutput(to, amtSatoshi);
-			change = availableSat - amtSatoshi - fee
+			tx.addOutput(options.omniOutput, 0);
+			tx.addOutput(from, skipValue)
 		} else {
-			if (fee > amtSatoshi) throw "BitCoin amount must be larger than the fee. (Ideally it should be MUCH larger)";
+			const fee = getTransactionSize(ninputs, change > 0 ? 2 : 1) * feePerByte;
+			if (fee > amtSatoshi) return Promise.reject("You do not have enough funds to send that much" )
 			tx.addOutput(to, amtSatoshi - fee);
+			if (change > 0) tx.addOutput(from, change);
 		}
-		if (change > 0) tx.addOutput(from, change);
 		var keyPair = bitcoin.ECPair.fromWIF(options.privKeyWIF, bitcoinNetwork);
 		for (var i = 0; i < ninputs; i++) {
 			tx.sign(i, keyPair);
